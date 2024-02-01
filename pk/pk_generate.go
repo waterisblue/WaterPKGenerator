@@ -1,5 +1,5 @@
 package pk
 
-func generate(objectName string, generateCount int64) {
+func generate(pkStart string, generateCount int64) {
 
 }
