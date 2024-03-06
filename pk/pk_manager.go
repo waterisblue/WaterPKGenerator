@@ -2,49 +2,26 @@ package pk
 
 import (
 	"pkgenerate/config"
+	sqlmanage "pkgenerate/sql_manage"
 	"strconv"
 )
 
-type PKManager struct {
-	goroutineNum    int
-	concurrentQueue *ConcurrentQueue
+type PKPrefixManager struct {
+	pks      chan string
+	isActive bool
 }
 
-var isInit bool = false
-var pkManager *PKManager
-
-// 初始化PKManager
-func InitManage() (pkManager *PKManager, err error) {
-	if isInit {
-		return
-	}
-
-	pkManager = &PKManager{
-		goroutineNum:    0,
-		concurrentQueue: NewConcurrentQueue(),
-	}
-
-	return
-}
+var PKManager map[string]PKPrefixManager
 
 // 开始生成key
 func Start() {
+	// 获取配置参数内容
 	configMap := config.GetConfig()
-	minCache, _ := strconv.Atoi(configMap["pk.cache.minnum"])
-	maxCache, _ := strconv.Atoi(configMap["pk.cache.num"])
-	pkManager.goroutineNum = calculateGoroutineNum(maxCache)
-	for {
-		if pkManager.concurrentQueue.Len() < minCache {
+	cacheNum, _ := strconv.Atoi(configMap["pk.cache.num"])
+	// 查询前缀总数
+	prefixCount, _ := sqlmanage.SelectPrefixCount()
 
-		}
-	}
-}
+	for i := 0; i < prefixCount; i++ {
 
-func calculateGoroutineNum(maxCache int) int {
-	if maxCache == 0 {
-		return 0
-	}
-	if maxCache%36 != 0 {
-		return maxCache/36 + 1
 	}
 }

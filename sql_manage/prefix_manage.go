@@ -3,6 +3,7 @@ package sqlmanage
 import (
 	"bytes"
 	"database/sql"
+	"errors"
 	"pkgenerate/config"
 	"strconv"
 )
@@ -24,16 +25,23 @@ func Init_db() (code int, err error) {
 // CREATE TABLE prefixCompare(
 // 	id integer primary key autoincrement,
 // 	prefixName TEXT NOT NULL UNIQUE,
-// 	prefix TEXT NOT NULL,
 // 	prefixEndPK TEXT NOT NULL
 // )
 
 var insertStmt *sql.Stmt
 
-func Insert_Prefix(prefixName, prefix string) (err error) {
+func Insert_Prefix(prefixName string) (err error) {
+	// 查看该前缀是否已经存在
+	isExist, _, _, _ := SelectPrefixByPrefixName(prefixName)
+	if !isExist {
+		// 该前缀已经存在，无法增加
+		err = errors.New("该前缀" + prefixName + "已经存在")
+		return
+	}
+
 	// 生成预编译语句
 	if insertStmt == nil {
-		insertStmt, err = db.Prepare("INSERT INTO prefixCompare (prefixName, prefix, prefixEndPK) values (?, ?, ?)")
+		insertStmt, err = db.Prepare("INSERT INTO prefixCompare (prefixName, prefixEndPK) values (?, ?, ?)")
 		if err != nil {
 			return
 		}
@@ -48,7 +56,7 @@ func Insert_Prefix(prefixName, prefix string) (err error) {
 	}
 
 	// 插入数据
-	res, err := insertStmt.Exec(prefixName, prefix, prefixEndPK.String())
+	res, err := insertStmt.Exec(prefixName, prefixEndPK.String())
 	if err != nil {
 		return
 	}
@@ -65,10 +73,10 @@ func Insert_Prefix(prefixName, prefix string) (err error) {
 // 根据前缀名查询前缀表内容
 var selectStmt *sql.Stmt
 
-func selectPrefixByPrefixName(prefixName string) (err error, prefix string, prefixEndPK string) {
+func SelectPrefixByPrefixName(prefixName string) (isExist bool, prefixNameRes string, prefixEndPK string, err error) {
 	// 生成预编译语句
 	if selectStmt == nil {
-		selectStmt, err = db.Prepare("SELECT prefix, prefixEndPK FROM prefixCompare WHERE prefixName = ?")
+		selectStmt, err = db.Prepare("SELECT prefixName, prefixEndPK FROM prefixCompare WHERE prefixName = ?")
 		if err != nil {
 			return
 		}
@@ -79,7 +87,33 @@ func selectPrefixByPrefixName(prefixName string) (err error, prefix string, pref
 		return
 	}
 
+	if !rows.Next() {
+		isExist = false
+		return
+	}
+
+	err = rows.Scan(&prefixNameRes, &prefixEndPK)
+	return
+}
+
+// 查询前缀总数
+var selectPrefixCount *sql.Stmt
+
+func SelectPrefixCount() (count int, err error) {
+	// 生成预编译语句
+	if selectPrefixCount == nil {
+		selectPrefixCount, err = db.Prepare("SELECT COUNT(1) as count FROM prefixCompare")
+		if err != nil {
+			return
+		}
+	}
+
+	rows, err := selectPrefixCount.Query()
+	if err != nil {
+		return
+	}
+
 	rows.Next()
-	err = rows.Scan(&prefix, &prefixEndPK)
+	err = rows.Scan(&count)
 	return
 }
