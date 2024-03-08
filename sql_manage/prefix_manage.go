@@ -117,3 +117,26 @@ func SelectPrefixCount() (count int, err error) {
 	err = rows.Scan(&count)
 	return
 }
+
+// 根据id查询前缀表内容
+// 查询id
+var selectPrefixById *sql.Stmt
+
+func SelectPrefixById(id int) (prefixName string, prefixEndPK string, err error) {
+	// 生成预编译语句
+	if selectPrefixById == nil {
+		selectPrefixById, err = db.Prepare("SELECT prefixName, prefixEndPK FROM prefixCompare WHERE id = ?")
+		if err != nil {
+			return
+		}
+	}
+
+	rows, err := selectPrefixById.Query(id)
+	if err != nil {
+		return
+	}
+
+	rows.Next()
+	err = rows.Scan(&prefixName, &prefixEndPK)
+	return
+}
