@@ -5,22 +5,20 @@ import (
 	"database/sql"
 	"errors"
 	"pkgenerate/config"
+	"pkgenerate/log"
 	"strconv"
 )
 
 var db *sql.DB
 
-// 初始化数据库
-func Init_db() (code int, err error) {
-	db, err = sql.Open("sqllite3", "../sql/prefix.db")
+func init() {
+	prefixDB, err := sql.Open("sqllite3", "../sql/prefix.db")
 	if err != nil {
-		return 1, err
+		log.Error.Println(err.Error())
 	}
-
-	return 0, err
+	db = prefixDB
 }
 
-// 插入一个前缀，其中前缀通过prefixName对应
 // 表结构：
 // CREATE TABLE prefixCompare(
 // 	id integer primary key autoincrement,
@@ -30,16 +28,14 @@ func Init_db() (code int, err error) {
 
 var insertStmt *sql.Stmt
 
-func Insert_Prefix(prefixName string) (err error) {
+func InsertPrefix(prefixName string) (err error) {
 	// 查看该前缀是否已经存在
 	isExist, _, _, _ := SelectPrefixByPrefixName(prefixName)
 	if !isExist {
-		// 该前缀已经存在，无法增加
 		err = errors.New("该前缀" + prefixName + "已经存在")
 		return
 	}
 
-	// 生成预编译语句
 	if insertStmt == nil {
 		insertStmt, err = db.Prepare("INSERT INTO prefixCompare (prefixName, prefixEndPK) values (?, ?, ?)")
 		if err != nil {
@@ -48,14 +44,12 @@ func Insert_Prefix(prefixName string) (err error) {
 	}
 	var prefixEndPK bytes.Buffer
 
-	// 前缀初始化
 	configMap := config.GetConfig()
 	pkLength, _ := strconv.Atoi(configMap["pk.length"])
 	for i := 0; i < pkLength; i++ {
 		prefixEndPK.WriteRune('0')
 	}
 
-	// 插入数据
 	res, err := insertStmt.Exec(prefixName, prefixEndPK.String())
 	if err != nil {
 		return
@@ -66,7 +60,6 @@ func Insert_Prefix(prefixName string) (err error) {
 		return
 	}
 
-	// 正常执行
 	return
 }
 
@@ -74,7 +67,6 @@ func Insert_Prefix(prefixName string) (err error) {
 var selectStmt *sql.Stmt
 
 func SelectPrefixByPrefixName(prefixName string) (isExist bool, prefixNameRes string, prefixEndPK string, err error) {
-	// 生成预编译语句
 	if selectStmt == nil {
 		selectStmt, err = db.Prepare("SELECT prefixName, prefixEndPK FROM prefixCompare WHERE prefixName = ?")
 		if err != nil {
@@ -100,7 +92,6 @@ func SelectPrefixByPrefixName(prefixName string) (isExist bool, prefixNameRes st
 var selectPrefixCount *sql.Stmt
 
 func SelectPrefixCount() (count int, err error) {
-	// 生成预编译语句
 	if selectPrefixCount == nil {
 		selectPrefixCount, err = db.Prepare("SELECT COUNT(1) as count FROM prefixCompare")
 		if err != nil {
@@ -123,7 +114,6 @@ func SelectPrefixCount() (count int, err error) {
 var selectPrefixById *sql.Stmt
 
 func SelectPrefixById(id int) (prefixName string, prefixEndPK string, err error) {
-	// 生成预编译语句
 	if selectPrefixById == nil {
 		selectPrefixById, err = db.Prepare("SELECT prefixName, prefixEndPK FROM prefixCompare WHERE id = ?")
 		if err != nil {
