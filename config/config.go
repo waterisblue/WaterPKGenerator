@@ -4,19 +4,20 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"pkgenerate/log"
 	"strings"
 )
 
 var config map[string]string
+var path = "./pk.properties"
 
-// 读取properties文件
-func InitConfig(path string) map[string]string {
+func init() {
 	config = make(map[string]string)
 
 	f, err := os.Open(path)
 	defer f.Close()
 	if err != nil {
-		panic(err)
+		log.Error.Println(err.Error())
 	}
 
 	r := bufio.NewReader(f)
@@ -26,7 +27,7 @@ func InitConfig(path string) map[string]string {
 			if err == io.EOF {
 				break
 			}
-			panic(err)
+			log.Error.Println(err.Error())
 		}
 		s := strings.TrimSpace(string(b))
 		index := strings.Index(s, "=")
@@ -43,7 +44,6 @@ func InitConfig(path string) map[string]string {
 		}
 		config[key] = value
 	}
-	return config
 }
 
 func GetConfig() map[string]string {

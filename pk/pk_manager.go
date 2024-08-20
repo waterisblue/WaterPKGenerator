@@ -14,12 +14,10 @@ type PKPrefixManager struct {
 
 var PKManager map[string]PKPrefixManager
 
-// 开始生成key
-func Init() {
-	// 获取配置参数内容
+func init() {
 	configMap := config.GetConfig()
 	cacheNum, _ := strconv.Atoi(configMap["pk.cache.num"])
-	// 查询前缀总数
+
 	prefixCount, _ := sqlmanage.SelectPrefixCount()
 
 	PKManager = make(map[string]PKPrefixManager)
@@ -32,7 +30,6 @@ func Init() {
 			continue
 		}
 
-		// 初始化生成主键
 		PKManager[prefixName] = PKPrefixManager{
 			pks:      make(chan string, cacheNum),
 			isActive: true,

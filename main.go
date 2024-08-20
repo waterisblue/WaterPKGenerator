@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"pkgenerate/config"
+	"pkgenerate/log"
 )
 
 func main() {
-	config.InitConfig("./pk.properties")
 	configMap := config.GetConfig()
 
-	fmt.Println(configMap["pk.cache.num"])
+	log.Info.Println(configMap["pk.cache.num"])
 }
